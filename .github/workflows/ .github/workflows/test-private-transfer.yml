@@ -1,0 +1,95 @@
+
+name: Verify transfer to private My-Knowledge
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-transfer-test
+  cancel-in-progress: false
+
+jobs:
+  transfer-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Save a harmless test marker and verify private readback
+        shell: bash
+        env:
+          MY_KNOWLEDGE_TOKEN: ${{ secrets.MY_KNOWLEDGE_TOKEN }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import json
+          import os
+          from datetime import datetime, timezone
+          from urllib.error import HTTPError, URLError
+          from urllib.parse import quote
+          from urllib.request import Request, urlopen
+
+          token = os.getenv('MY_KNOWLEDGE_TOKEN', '')
+          if not token:
+              raise SystemExit('ERROR: MY_KNOWLEDGE_TOKEN secret is not configured')
+
+          run_id = os.environ['GH_RUN_ID']
+          attempt = os.environ['GH_RUN_ATTEMPT']
+          path = (
+              'Projects/CUBE_NOTE/_integration_tests/'
+              f'transfer_check_{run_id}_{attempt}.json'
+          )
+          marker = {
+              'test_only': True,
+              'origin': 'reiji328/hattori-data-collector',
+              'github_run_id': run_id,
+              'github_run_attempt': attempt,
+              'created_at_utc': datetime.now(timezone.utc).isoformat(),
+              'message': 'This is a connection test, not pachinko data.'
+          }
+          raw = (json.dumps(marker, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+          api_url = (
+              'https://api.github.com/repos/reiji328/My-Knowledge/contents/'
+              + quote(path, safe='/')
+          )
+          headers = {
+              'Accept': 'application/vnd.github+json',
+              'Authorization': f'Bearer {token}',
+              'X-GitHub-Api-Version': '2022-11-28',
+              'User-Agent': 'hattori-data-collector-transfer-test',
+          }
+          put_body = {
+              'message': 'test: verify private data transfer (no real data)',
+              'content': base64.b64encode(raw).decode('ascii'),
+              'branch': 'master',
+          }
+          put_request = Request(
+              api_url, data=json.dumps(put_body).encode('utf-8'),
+              headers=headers, method='PUT'
+          )
+          try:
+              with urlopen(put_request, timeout=30) as response:
+                  if response.status != 201:
+                      raise RuntimeError(f'Unexpected create status: {response.status}')
+              get_request = Request(api_url, headers=headers, method='GET')
+              with urlopen(get_request, timeout=30) as response:
+                  response_data = json.load(response)
+              restored = base64.b64decode(response_data['content'])
+              if hashlib.sha256(raw).digest() != hashlib.sha256(restored).digest():
+                  raise RuntimeError('SHA-256 comparison failed')
+          except HTTPError as exc:
+              raise SystemExit(
+                  f'ERROR: GitHub API HTTP {exc.code}; verify token, permissions, '
+                  'repository, or an existing file conflict.'
+              ) from None
+          except URLError as exc:
+              raise SystemExit('ERROR: Could not reach GitHub API') from None
+
+          print('SUCCESS: Private test marker saved and SHA-256 readback verified')
+          print(f'Private destination path: {path}')
+          print('No pachinko data or tokens were intentionally printed or uploaded as artifacts')
+          PY
