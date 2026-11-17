@@ -1,0 +1,86 @@
+name: P's CUBE - Playwright one-time ROOT diagnostic
+
+"on":
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hattori-one-time-root-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Install plain Playwright Chromium (no TinyFish)
+        shell: bash
+        run: |
+          npm init -y >/dev/null
+          npm install --no-save --no-audit --no-fund --ignore-scripts playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Check only the public store ROOT once
+        shell: bash
+        run: |
+          node <<'NODE'
+          'use strict';
+          const assert = require('node:assert/strict');
+          const target = 'https://www.pscube.jp/dedamajyoho-P-townDMMpachi/c762502/';
+          function classify(code, title, text) {
+            if ([401, 403, 429].includes(code)) return 'HTTP_RESTRICTED';
+            if (Number.isInteger(code) && code >= 500) return 'HTTP_5XX';
+            if (code === 404) return 'HTTP_404';
+            if (/500\s*[-–]\s*内部サーバ/.test(title + ' ' + text)) return 'DISPLAY_500';
+            if (/アクセス拒否|Access Denied|CAPTCHA|認証が必要/.test(title + ' ' + text)) return 'ACCESS_PAGE';
+            if (code === 200 && text.includes('パチンコデータ') && text.includes('スロットデータ')) return 'NORMAL_ROOT';
+            return 'UNVERIFIED';
+          }
+          // Offline checks run before any network activity.
+          assert.equal(classify(403, '500 - 内部サーバエラー', ''), 'HTTP_RESTRICTED');
+          assert.equal(classify(500, 'Internal Error', ''), 'HTTP_5XX');
+          assert.equal(classify(200, '500 - 内部サーバエラー', ''), 'DISPLAY_500');
+          assert.equal(classify(200, '大当り情報', 'パチンコデータ スロットデータ'), 'NORMAL_ROOT');
+          assert.equal(classify(null, '', ''), 'UNVERIFIED');
+          assert.equal(classify(429, '', ''), 'HTTP_RESTRICTED');
+          console.log('PASS: six offline classifications');
+          if (process.env.DIAGNOSTIC_OFFLINE === '1') process.exit(0);
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
+            let result = { time_utc: new Date().toISOString(), target, stage: 'ROOT_ONLY' };
+            try {
+              // One navigation only. No retry, no proxy change, no data extraction.
+              const response = await page.goto(target, { waitUntil: 'domcontentloaded', timeout: 45000 });
+              const code = response ? response.status() : null;
+              await page.waitForTimeout(1200);  // One render wait, not an extra navigation.
+              const title = await page.title().catch(() => '');
+              const body = await page.locator('body').innerText({ timeout: 5000 }).catch(() => '');
+              const location = new URL(page.url());
+              result = {
+                ...result,
+                http_status: code,
+                displayed_500: /500\s*[-–]\s*内部サーバ/.test(title + ' ' + body),
+                document_title: title.slice(0, 100),
+                final_url_without_query: location.origin + location.pathname,
+                verdict: classify(code, title, body),
+              };
+            } catch (e) {
+              result.verdict = 'NAVIGATION_ERROR';
+              result.error_type = e?.name || 'Error';
+            } finally {
+              await browser.close();
+            }
+            // Only sanitized diagnostic facts; no tokens, cookies, HTML, screenshots, or machine data.
+            console.log('ROOT_PROBE_RESULT ' + JSON.stringify(result));
+            if (result.verdict !== 'NORMAL_ROOT') {
+              console.error('STOP: no verified normal ROOT; no further page navigation');
+              process.exitCode = 2;
+            }
+          })().catch(e => {
+            console.error('STOP: infrastructure error', e?.name || 'Error');
+            process.exitCode = 2;
+          });
+          NODE
