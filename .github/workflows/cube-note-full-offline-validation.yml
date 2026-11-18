@@ -1,0 +1,89 @@
+name: "CUBE NOTE - Full OFFLINE suite (116 tests)"
+
+"on":
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cube-note-offline-suite-v2
+  cancel-in-progress: false
+
+jobs:
+  verify-offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Retrieve pinned private test source and validate SHA-256
+        env:
+          MY_KNOWLEDGE_TOKEN: ${{ secrets.MY_KNOWLEDGE_TOKEN }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          from urllib.error import HTTPError, URLError
+          from urllib.parse import quote
+          from urllib.request import Request, urlopen
+
+          token = os.environ.get("MY_KNOWLEDGE_TOKEN", "")
+          if not token:
+              raise SystemExit("STOP: missing secret")
+          commit = "440d808442398e89b2e2cd9bb8308aa4a7a66640"
+          base = "Projects/CUBE_NOTE/Development_20261118/offline_pipeline_v01/"
+          expected = {
+              "pipeline/pipeline_offline.cjs": "442eedb6be04e2700f398644fdd6d038206a1263bc0f58bf52ba5e81bef15541",
+              "pipeline/test_pipeline_offline.cjs": "607646b0e8205763b8fdb76e4a24e731b90c01eb82cdd6f872d5ae246af0bcda",
+              "bridge/intake.cjs": "f86b13db4a11ba3d8ae213be6fa5ad9e073738b560e1503fae95638729b788b2",
+              "bridge/private_bridge.py": "811d71e038ddb7eddb48bb3428f87df7c759744bdeb185d8e2a976ad87c7df90",
+              "bridge/test_intake.cjs": "1fbe7b806770dce4a12789249ab3fae11b6fb1cc36b5de4a0d2b87bdefb04274",
+              "bridge/test_private_bridge.py": "c1392bac5fa3beecfece97a0dffc48e501059d8e01fa363333b552dfc4ee1e83",
+              "entry/entry_pilot.cjs": "1c2574b44f6d98db5bd124a33263fe9458ffba12a74ff98c040fc2dacef9b49a",
+              "entry/entry_policy.cjs": "312a0d954948a1760090c08d378d9754a7fe82f30866d41333e36b56edd299ff",
+              "entry/test_entry_navigation.cjs": "ad4e3f9c85e56572856741bc70e9c6f24bb75e54e29150ddadc03f6a5b9e68b3",
+              "entry/test_entry_policy.cjs": "351865e63a34505f9dda0b6e3ced23573f7209b06b906ac9c2b2b67de4e3400f",
+          }
+          dest = Path("offline-suite")
+          for rel, digest in expected.items():
+              relative = rel[9:] if rel.startswith("pipeline/") else rel
+              path = base + relative
+              url = ("https://api.github.com/repos/reiji328/My-Knowledge/contents/"
+                     + quote(path, safe="/") + "?ref=" + commit)
+              req = Request(url, headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": "Bearer " + token,
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "User-Agent": "hattori-offline-suite",
+              })
+              try:
+                  with urlopen(req, timeout=20) as response:
+                      payload = json.load(response)
+              except (HTTPError, URLError):
+                  raise SystemExit("STOP: pinned private source retrieval failed") from None
+              if payload.get("type") != "file" or payload.get("encoding") != "base64":
+                  raise SystemExit("STOP: unexpected GitHub file envelope")
+              blob = base64.b64decode(payload.get("content",""))
+              if hashlib.sha256(blob).hexdigest() != digest:
+                  raise SystemExit("STOP: pinned source hash mismatch")
+              target = dest / rel
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(blob)
+          print("PASS: pinned private sources, 10 files, SHA-256 verified")
+          print("No DMM or P's CUBE requests, machine data or artifacts")
+          PY
+
+      - name: Offline pipeline gate - 26 synthetic tests
+        run: node --test offline-suite/pipeline/test_pipeline_offline.cjs
+
+      - name: Offline UI entry - 46 synthetic tests
+        run: node --test offline-suite/entry/test_entry_policy.cjs offline-suite/entry/test_entry_navigation.cjs
+
+      - name: Offline private intake - 33 synthetic tests
+        run: node --test offline-suite/bridge/test_intake.cjs
+
+      - name: Offline private transfer mocks - 11 synthetic tests
+        run: python3 -m unittest discover -s offline-suite/bridge -p 'test_private_bridge.py' -v
