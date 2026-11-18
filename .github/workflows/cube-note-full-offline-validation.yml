@@ -1,4 +1,4 @@
-name: "CUBE NOTE - Full OFFLINE suite (116 tests)"
+name: "CUBE NOTE - Full OFFLINE suite (137 tests)"
 
 "on":
   workflow_dispatch:
@@ -33,7 +33,7 @@ jobs:
           token = os.environ.get("MY_KNOWLEDGE_TOKEN", "")
           if not token:
               raise SystemExit("STOP: missing secret")
-          commit = "440d808442398e89b2e2cd9bb8308aa4a7a66640"
+          commit = "1b45d90c75416d0439b496f2c74f67af4a6cb211"
           base = "Projects/CUBE_NOTE/Development_20261118/offline_pipeline_v01/"
           expected = {
               "pipeline/pipeline_offline.cjs": "442eedb6be04e2700f398644fdd6d038206a1263bc0f58bf52ba5e81bef15541",
@@ -46,6 +46,9 @@ jobs:
               "entry/entry_policy.cjs": "312a0d954948a1760090c08d378d9754a7fe82f30866d41333e36b56edd299ff",
               "entry/test_entry_navigation.cjs": "ad4e3f9c85e56572856741bc70e9c6f24bb75e54e29150ddadc03f6a5b9e68b3",
               "entry/test_entry_policy.cjs": "351865e63a34505f9dda0b6e3ced23573f7209b06b906ac9c2b2b67de4e3400f",
+              "e2e_mock/journey_mock_only.cjs": "8859ddf36d9533078dd73c78440ff2c9ab51bb3e510c3049694337fa4743a965",
+              "e2e_mock/test_journey_mock_only.cjs": "a75104d63f90f3b5a7548894b3b90a06a8e5f320f365842fc9f0d189a6437815",
+              "e2e_mock/test_private_audit_mock.py": "b234e3f21e98dbba7cb8cc072e283614e8c16c2e01fdfadd447c2ce8e7817c05",
           }
           dest = Path("offline-suite")
           for rel, digest in expected.items():
@@ -87,3 +90,9 @@ jobs:
 
       - name: Offline private transfer mocks - 11 synthetic tests
         run: python3 -m unittest discover -s offline-suite/bridge -p 'test_private_bridge.py' -v
+
+      - name: Offline simulated UI to catalog to two units - 17 E2E tests
+        run: node --test offline-suite/e2e_mock/test_journey_mock_only.cjs
+
+      - name: Offline simulated private audit write/readback - 4 tests
+        run: python3 -m unittest discover -s offline-suite/e2e_mock -p 'test_private_audit_mock.py' -v
