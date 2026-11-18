@@ -75,7 +75,7 @@ jobs:
               target = dest / rel
               target.parent.mkdir(parents=True, exist_ok=True)
               target.write_bytes(blob)
-          print("PASS: pinned private sources, 10 files, SHA-256 verified")
+          print(f"PASS: pinned private sources, {len(expected)} files, SHA-256 verified")
           print("No DMM or P's CUBE requests, machine data or artifacts")
           PY
 
