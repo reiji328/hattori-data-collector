@@ -1,4 +1,4 @@
-name: "CUBE NOTE - Full OFFLINE suite (270 tests)"
+name: "CUBE NOTE - Full OFFLINE suite (305 tests)"
 
 "on":
   workflow_dispatch:
@@ -33,7 +33,7 @@ jobs:
           token = os.environ.get("MY_KNOWLEDGE_TOKEN", "")
           if not token:
               raise SystemExit("STOP: missing secret")
-          commit = "34e61e48937c5c1df4a13cf1e91e3b4e673f52fb"
+          commit = "3f2deb79dabbd525c78f3d3c93ae7979361f183d"
           base = "Projects/CUBE_NOTE/Development_20261118/offline_pipeline_v01/"
           expected = {
               "pipeline/pipeline_offline.cjs": "442eedb6be04e2700f398644fdd6d038206a1263bc0f58bf52ba5e81bef15541",
@@ -57,6 +57,8 @@ jobs:
               "browser_contract_v01/test_observed_catalog_bridge_offline.cjs": "a4f0438ad967f4d588d32784ed4ead4a0a2debd21b10cfadc55b58b386f83f38",
               "unit_review/two_unit_review_offline.cjs": "d9140a87ba18d0c7585df01f9bdf8e722cf33a202c163bd93529d6224d7dff2b",
               "unit_review/test_two_unit_review_offline.cjs": "9a7deca8cbec8782874832195bc10efc09b983c5350762f085d82b544af76088",
+              "unit_review/private_raw_create_mock.py": "b4e804c83ee010722e7d6e5106b16cbfd068b41c4b21f6ba2e043160f6db311c",
+              "unit_review/test_private_raw_create_mock.py": "2aa68110b1c96f4b8a371116f20c3de0cfb9b8b6deacbd1d1552c01348c32d10",
           }
           dest = Path("offline-suite")
           for rel, digest in expected.items():
@@ -116,3 +118,6 @@ jobs:
 
       - name: Offline two-unit receipt SHA and mock private readback - 36 synthetic tests
         run: node --test offline-suite/unit_review/test_two_unit_review_offline.cjs
+
+      - name: Offline private raw-create and audit readback - 35 synthetic tests
+        run: python3 -m unittest discover -s offline-suite/unit_review -p 'test_private_raw_create_mock.py' -v
