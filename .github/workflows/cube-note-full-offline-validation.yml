@@ -1,4 +1,4 @@
-name: "CUBE NOTE - Full OFFLINE suite (234 tests)"
+name: "CUBE NOTE - Full OFFLINE suite (270 tests)"
 
 "on":
   workflow_dispatch:
@@ -33,7 +33,7 @@ jobs:
           token = os.environ.get("MY_KNOWLEDGE_TOKEN", "")
           if not token:
               raise SystemExit("STOP: missing secret")
-          commit = "cb16ebe2bbac999b854a73e90ae75de5f4362c88"
+          commit = "34e61e48937c5c1df4a13cf1e91e3b4e673f52fb"
           base = "Projects/CUBE_NOTE/Development_20261118/offline_pipeline_v01/"
           expected = {
               "pipeline/pipeline_offline.cjs": "442eedb6be04e2700f398644fdd6d038206a1263bc0f58bf52ba5e81bef15541",
@@ -55,6 +55,8 @@ jobs:
               "browser_contract_v01/test_context_response_evidence.cjs": "1d8ce47c3f7ea7bee53c99e017629dade57169dd024d08ed172fb3812cf0d143",
               "browser_contract_v01/observed_catalog_bridge_offline.cjs": "986295584cc821fc0438ae6ec0fa9c147416fd59b0582080364bb1854be2ec22",
               "browser_contract_v01/test_observed_catalog_bridge_offline.cjs": "a4f0438ad967f4d588d32784ed4ead4a0a2debd21b10cfadc55b58b386f83f38",
+              "unit_review/two_unit_review_offline.cjs": "d9140a87ba18d0c7585df01f9bdf8e722cf33a202c163bd93529d6224d7dff2b",
+              "unit_review/test_two_unit_review_offline.cjs": "9a7deca8cbec8782874832195bc10efc09b983c5350762f085d82b544af76088",
           }
           dest = Path("offline-suite")
           for rel, digest in expected.items():
@@ -111,3 +113,6 @@ jobs:
 
       - name: Offline DMM click to Context response to catalog bridge - 16 synthetic tests
         run: node --test offline-suite/browser_contract_v01/test_observed_catalog_bridge_offline.cjs
+
+      - name: Offline two-unit receipt SHA and mock private readback - 36 synthetic tests
+        run: node --test offline-suite/unit_review/test_two_unit_review_offline.cjs
