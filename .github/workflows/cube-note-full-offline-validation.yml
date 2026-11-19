@@ -1,4 +1,4 @@
-name: "CUBE NOTE - Full OFFLINE suite (218 tests)"
+name: "CUBE NOTE - Full OFFLINE suite (234 tests)"
 
 "on":
   workflow_dispatch:
@@ -33,7 +33,7 @@ jobs:
           token = os.environ.get("MY_KNOWLEDGE_TOKEN", "")
           if not token:
               raise SystemExit("STOP: missing secret")
-          commit = "43655037f760b67df5c68fb28901af9806057949"
+          commit = "cb16ebe2bbac999b854a73e90ae75de5f4362c88"
           base = "Projects/CUBE_NOTE/Development_20261118/offline_pipeline_v01/"
           expected = {
               "pipeline/pipeline_offline.cjs": "442eedb6be04e2700f398644fdd6d038206a1263bc0f58bf52ba5e81bef15541",
@@ -42,7 +42,7 @@ jobs:
               "bridge/private_bridge.py": "811d71e038ddb7eddb48bb3428f87df7c759744bdeb185d8e2a976ad87c7df90",
               "bridge/test_intake.cjs": "1fbe7b806770dce4a12789249ab3fae11b6fb1cc36b5de4a0d2b87bdefb04274",
               "bridge/test_private_bridge.py": "c1392bac5fa3beecfece97a0dffc48e501059d8e01fa363333b552dfc4ee1e83",
-              "entry/entry_pilot.cjs": "1c2574b44f6d98db5bd124a33263fe9458ffba12a74ff98c040fc2dacef9b49a",
+              "entry/entry_pilot.cjs": "610b8aefd34bff3c456d6d918c913a5d14c1e4cf41ba66862a02425b228ff66c",
               "entry/entry_policy.cjs": "312a0d954948a1760090c08d378d9754a7fe82f30866d41333e36b56edd299ff",
               "entry/test_entry_navigation.cjs": "ad4e3f9c85e56572856741bc70e9c6f24bb75e54e29150ddadc03f6a5b9e68b3",
               "entry/test_entry_policy.cjs": "351865e63a34505f9dda0b6e3ced23573f7209b06b906ac9c2b2b67de4e3400f",
@@ -51,8 +51,10 @@ jobs:
               "e2e_mock/test_private_audit_mock.py": "b234e3f21e98dbba7cb8cc072e283614e8c16c2e01fdfadd447c2ce8e7817c05",
               "browser_contract_v01/browser_response_witness.cjs": "31c233e1a398fd863f583466a382e96bfa524168d55fe6ce2f02674550b2888a",
               "browser_contract_v01/test_browser_response_witness.cjs": "003a9975f4383eaf8d40e6fe0c55f946ba48f9c9d6b796d8b6a66f733811bdbb",
-              "browser_contract_v01/context_response_evidence.cjs": "ee69212f243a897836dfb5cf9448849979cd06c72e7b274a640dcee11f7ce41f",
+              "browser_contract_v01/context_response_evidence.cjs": "9df6ebe55328bcb43864f9fe6e7126a6a466f11f4f664ecc7c31f608de3e2159",
               "browser_contract_v01/test_context_response_evidence.cjs": "1d8ce47c3f7ea7bee53c99e017629dade57169dd024d08ed172fb3812cf0d143",
+              "browser_contract_v01/observed_catalog_bridge_offline.cjs": "986295584cc821fc0438ae6ec0fa9c147416fd59b0582080364bb1854be2ec22",
+              "browser_contract_v01/test_observed_catalog_bridge_offline.cjs": "a4f0438ad967f4d588d32784ed4ead4a0a2debd21b10cfadc55b58b386f83f38",
           }
           dest = Path("offline-suite")
           for rel, digest in expected.items():
@@ -106,3 +108,6 @@ jobs:
 
       - name: Offline BrowserContext popup-first-response evidence - 51 synthetic tests
         run: node --test offline-suite/browser_contract_v01/test_context_response_evidence.cjs
+
+      - name: Offline DMM click to Context response to catalog bridge - 16 synthetic tests
+        run: node --test offline-suite/browser_contract_v01/test_observed_catalog_bridge_offline.cjs
