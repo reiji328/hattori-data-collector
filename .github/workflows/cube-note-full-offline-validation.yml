@@ -1,4 +1,4 @@
-name: "CUBE NOTE - Full OFFLINE suite (167 tests)"
+name: "CUBE NOTE - Full OFFLINE suite (218 tests)"
 
 "on":
   workflow_dispatch:
@@ -33,7 +33,7 @@ jobs:
           token = os.environ.get("MY_KNOWLEDGE_TOKEN", "")
           if not token:
               raise SystemExit("STOP: missing secret")
-          commit = "a28cb800e8a3538e78a411ab28798b6e5ef793b8"
+          commit = "43655037f760b67df5c68fb28901af9806057949"
           base = "Projects/CUBE_NOTE/Development_20261118/offline_pipeline_v01/"
           expected = {
               "pipeline/pipeline_offline.cjs": "442eedb6be04e2700f398644fdd6d038206a1263bc0f58bf52ba5e81bef15541",
@@ -51,6 +51,8 @@ jobs:
               "e2e_mock/test_private_audit_mock.py": "b234e3f21e98dbba7cb8cc072e283614e8c16c2e01fdfadd447c2ce8e7817c05",
               "browser_contract_v01/browser_response_witness.cjs": "31c233e1a398fd863f583466a382e96bfa524168d55fe6ce2f02674550b2888a",
               "browser_contract_v01/test_browser_response_witness.cjs": "003a9975f4383eaf8d40e6fe0c55f946ba48f9c9d6b796d8b6a66f733811bdbb",
+              "browser_contract_v01/context_response_evidence.cjs": "ee69212f243a897836dfb5cf9448849979cd06c72e7b274a640dcee11f7ce41f",
+              "browser_contract_v01/test_context_response_evidence.cjs": "1d8ce47c3f7ea7bee53c99e017629dade57169dd024d08ed172fb3812cf0d143",
           }
           dest = Path("offline-suite")
           for rel, digest in expected.items():
@@ -101,3 +103,6 @@ jobs:
 
       - name: Offline browser document and JSON provenance - 30 synthetic tests
         run: node --test offline-suite/browser_contract_v01/test_browser_response_witness.cjs
+
+      - name: Offline BrowserContext popup-first-response evidence - 51 synthetic tests
+        run: node --test offline-suite/browser_contract_v01/test_context_response_evidence.cjs
