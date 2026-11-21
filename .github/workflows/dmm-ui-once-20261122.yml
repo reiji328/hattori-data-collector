@@ -1,0 +1,46 @@
+name: P's CUBE - DMM normal UI one-shot (2026-11-22)
+
+on:
+  push:
+    branches:
+      - experiment/20261122-dmm-ui-oneshot
+    paths:
+      - .github/workflows/dmm-ui-once-20261122.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hattori-20261122-dmm-ui-once
+  cancel-in-progress: false
+
+jobs:
+  entry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install local Playwright Chromium (no TinyFish)
+        run: |
+          npm init -y >/dev/null
+          npm install --no-save --no-audit --no-fund --ignore-scripts playwright@1.65.1
+          npx playwright install chromium --with-deps
+      - name: Validate diagnostic code without site access
+        env:
+          DIAGNOSTIC_OFFLINE: '1'
+        run: node diagnostics/dmm_ui_entry_one_shot.cjs
+      - name: Single normal DMM UI entry attempt
+        run: node diagnostics/dmm_ui_entry_one_shot.cjs
+      - name: Save only sanitized diagnostic metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dmm-ui-once-${{ github.run_id }}
+          path: evidence/manifest.json
+          if-no-files-found: ignore
+          retention-days: 7
