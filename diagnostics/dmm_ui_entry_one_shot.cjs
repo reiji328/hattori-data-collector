@@ -33,6 +33,8 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 async function main(){
  const testCount=offlineTests();
  if(process.env.DIAGNOSTIC_OFFLINE==='1'){console.log('OFFLINE_PREFLIGHT_PASS '+testCount);return}
+ // This particular live authorization was consumed by the initial run.
+ if(process.env.GITHUB_RUN_ID!=='44962916748'){console.error('STOP: RUN_ALREADY_USED');process.exitCode=2;return}
  const {chromium}=require('playwright');
  fs.mkdirSync('evidence',{recursive:true});
  const m={version:'dmm-ui-one-shot-20261122-v1',start_utc:new Date().toISOString(),entry:ENTRY,stage:'start',status:'started',verdict:null,dmm_document_status:null,pscube_document_statuses:[],pscube_api_responses:0,ui_click_count:0,scroll_count:0,important_failures:[],browser_closed:false,raw_data_saved:false,retries:0};
