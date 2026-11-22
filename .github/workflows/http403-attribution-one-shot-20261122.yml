@@ -1,0 +1,46 @@
+name: CUBE NOTE - HTTP403 origin one-shot diagnostic
+
+on:
+  push:
+    branches:
+      - experiment/20261122-cloudflare-origin-one-shot
+    paths:
+      - .github/workflows/http403-attribution-one-shot-20261122.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cube-note-20261122-http403-attribution-one-shot
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Chrome runtime
+        run: |
+          npm init -y >/dev/null
+          npm install --no-save --no-audit --no-fund --ignore-scripts playwright@1.65.1
+          npx playwright install chromium --with-deps
+      - name: Test HTTP status/body classifier without any site access
+        env:
+          ONLY_OFFLINE: '1'
+        run: node diagnostics/cloudflare_origin_one_shot_20261122.cjs
+      - name: One normal DMM page view and passive P's CUBE HTTP403 attribution
+        run: xvfb-run -a node diagnostics/cloudflare_origin_one_shot_20261122.cjs
+      - name: Upload derived status flags only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: http403-attribution-${{ github.run_id }}
+          path: evidence/http403_attribution.json
+          if-no-files-found: ignore
+          retention-days: 7
