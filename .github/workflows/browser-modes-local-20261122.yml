@@ -32,3 +32,5 @@ jobs:
           npx playwright install chromium --with-deps
       - name: Compare browser implementations only on localhost
         run: xvfb-run -a node diagnostics/browser_modes_loopback_20261122.cjs
+      - name: Confirm headed Chrome can capture JSON and fail-close on simulated 403
+        run: xvfb-run -a node diagnostics/headed_chrome_json_capture_local_20261122.cjs
