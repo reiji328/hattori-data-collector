@@ -1,0 +1,46 @@
+name: CUBE NOTE - one headed Google Chrome DMM entry check
+
+on:
+  push:
+    branches:
+      - experiment/20261122-headed-chrome-dmm-one-shot
+    paths:
+      - .github/workflows/dmm-headed-chrome-one-shot-20261122.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cube-note-20261122-headed-chrome-dmm-once
+  cancel-in-progress: false
+
+jobs:
+  entry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Playwright and Chromium runtime
+        run: |
+          npm init -y >/dev/null
+          npm install --no-save --no-audit --no-fund --ignore-scripts playwright@1.65.1
+          npx playwright install chromium --with-deps
+      - name: Verify code offline first
+        env:
+          DIAGNOSTIC_OFFLINE: '1'
+        run: node diagnostics/dmm_headed_chrome_entry_one_shot_20261122.cjs
+      - name: One normal DMM UI visit through headed Google Chrome
+        run: xvfb-run -a node diagnostics/dmm_headed_chrome_entry_one_shot_20261122.cjs
+      - name: Upload sanitized status only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dmm-headed-chrome-once-${{ github.run_id }}
+          path: evidence/manifest.json
+          if-no-files-found: ignore
+          retention-days: 7
