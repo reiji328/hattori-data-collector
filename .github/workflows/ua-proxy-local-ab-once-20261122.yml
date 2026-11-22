@@ -1,0 +1,34 @@
+name: CUBE NOTE - UA and proxy comparison (local-only, one-shot)
+
+on:
+  push:
+    branches:
+      - experiment/20261122-ua-proxy-local-ab
+    paths:
+      - .github/workflows/ua-proxy-local-ab-once-20261122.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cube-note-ua-proxy-local-ab-20261122
+  cancel-in-progress: false
+
+jobs:
+  local-ab:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install local Chromium
+        run: |
+          npm init -y >/dev/null
+          npm install --no-save --no-audit --no-fund --ignore-scripts playwright@1.65.1
+          npx playwright install chromium --with-deps
+      - name: UA override and local non-forwarding HTTP proxy A/B
+        run: node diagnostics/ua_proxy_loopback_ab_20261122.cjs
