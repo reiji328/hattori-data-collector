@@ -1,0 +1,34 @@
+name: CUBE NOTE - headed Chrome vs headless Chromium (localhost only)
+
+on:
+  push:
+    branches:
+      - experiment/20261122-browser-modes-local
+    paths:
+      - .github/workflows/browser-modes-local-20261122.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cube-note-20261122-browser-modes-local
+  cancel-in-progress: false
+
+jobs:
+  browser-compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Playwright and bundled Chromium
+        run: |
+          npm init -y >/dev/null
+          npm install --no-save --no-audit --no-fund --ignore-scripts playwright@1.65.1
+          npx playwright install chromium --with-deps
+      - name: Compare browser implementations only on localhost
+        run: xvfb-run -a node diagnostics/browser_modes_loopback_20261122.cjs
