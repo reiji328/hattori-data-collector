@@ -53,7 +53,8 @@ async function main(){
   if(process.env.ONLY_OFFLINE==='1')return;
   if(process.env.GITHUB_ACTIONS!=='true'||
      process.env.GITHUB_RUN_ATTEMPT!=='1'||
-     process.env.GITHUB_REF!=='refs/heads/experiment/20261122-cloudflare-origin-one-shot'){
+     process.env.GITHUB_REF!=='refs/heads/experiment/20261122-cloudflare-origin-one-shot'||
+     process.env.GITHUB_RUN_ID!=='44980439492'){
     console.error('STOP: Unauthorized run scope');process.exitCode=2;return;
   }
   const m={
