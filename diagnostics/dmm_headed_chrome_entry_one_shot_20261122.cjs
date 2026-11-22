@@ -34,7 +34,7 @@ async function main(){
  const testCount=offlineTests();
  if(process.env.DIAGNOSTIC_OFFLINE==='1'){console.log('OFFLINE_PREFLIGHT_PASS '+testCount);return}
  // Only the first authorized GitHub run attempt on this isolated branch may access the site.
- if(process.env.GITHUB_ACTIONS!=='true'||process.env.GITHUB_RUN_ATTEMPT!=='1'||process.env.GITHUB_REF!=='refs/heads/experiment/20261122-headed-chrome-dmm-one-shot'){console.error('STOP: unauthorized run context');process.exitCode=2;return}
+ if(process.env.GITHUB_ACTIONS!=='true'||process.env.GITHUB_RUN_ATTEMPT!=='1'||process.env.GITHUB_REF!=='refs/heads/experiment/20261122-headed-chrome-dmm-one-shot'||process.env.GITHUB_RUN_ID!=='44977916851'){console.error('STOP: unauthorized run context');process.exitCode=2;return}
  const {chromium}=require('playwright');
  fs.mkdirSync('evidence',{recursive:true});
  const m={version:'dmm-ui-one-shot-20261122-v1',start_utc:new Date().toISOString(),entry:ENTRY,stage:'start',status:'started',verdict:null,dmm_document_status:null,pscube_document_statuses:[],pscube_403_header_names:[],pscube_api_responses:0,ui_click_count:0,scroll_count:0,important_failures:[],browser_closed:false,raw_data_saved:false,retries:0};
